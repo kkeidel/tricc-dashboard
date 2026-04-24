@@ -5,8 +5,7 @@ on:
   schedule:
     - cron: "*/5 * * * *"
 
-permissions:
-  contents: write
+permissions: read-all
 
 jobs:
   render:
@@ -15,7 +14,11 @@ jobs:
     env:
       SOSCI_API_KEY: ${{ secrets.SOSCI_API_KEY }}
       SOSCI_PROJECT_ID: ${{ secrets.SOSCI_PROJECT_ID }}
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
+    permissions:
+      contents: write
+    
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
