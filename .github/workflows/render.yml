@@ -2,12 +2,16 @@ name: Render Rmd daily
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # täglich 06:00 UTC (~8 Uhr DE)
-  workflow_dispatch:      # manuell starten möglich
+    - cron: "0 6 * * *"
+  workflow_dispatch:
 
 jobs:
   render:
     runs-on: ubuntu-latest
+
+    env:
+      SOSCI_API_KEY: ${{ secrets.SOSCI_API_KEY }}
+      SOSCI_PROJECT_ID: ${{ secrets.SOSCI_PROJECT_ID }}
 
     steps:
       - name: Checkout repo
