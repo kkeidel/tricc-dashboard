@@ -17,122 +17,122 @@ library(kableExtra)
 ```
 
 ```{r, include=FALSE, echo=FALSE}
-# Get data via API
-
-api_key <- Sys.getenv("SOSCI_API_KEY")
-project_id <- Sys.getenv("SOSCI_PROJECT_ID")
-
-url <- paste0(
-  "https://www.soscisurvey.de/admin/api.php?v1/projects/",
-  project_id,
-  "/dataset"
-)
-
-res <- GET(
-  url,
-  add_headers(
-    Authorization = paste0("Bearer ", api_key)
-  )
-)
-
-# status_code(res)
-# content(res, "text", encoding = "UTF-8")
-
-# Get data and flatten it
-json_text <- content(res, "text", encoding = "UTF-8")
-raw <- fromJSON(json_text, flatten = TRUE)
-
-dat_raw <- raw$data
-
-df_raw <- bind_rows(dat_raw)
-
-# Only keep complete datasets
-df <- df_raw %>% filter(STATUS=="complete")
+# # Get data via API
+# 
+# api_key <- Sys.getenv("SOSCI_API_KEY")
+# project_id <- Sys.getenv("SOSCI_PROJECT_ID")
+# 
+# url <- paste0(
+#   "https://www.soscisurvey.de/admin/api.php?v1/projects/",
+#   project_id,
+#   "/dataset"
+# )
+# 
+# res <- GET(
+#   url,
+#   add_headers(
+#     Authorization = paste0("Bearer ", api_key)
+#   )
+# )
+# 
+# # status_code(res)
+# # content(res, "text", encoding = "UTF-8")
+# 
+# # Get data and flatten it
+# json_text <- content(res, "text", encoding = "UTF-8")
+# raw <- fromJSON(json_text, flatten = TRUE)
+# 
+# dat_raw <- raw$data
+# 
+# df_raw <- bind_rows(dat_raw)
+# 
+# # Only keep complete datasets
+# df <- df_raw %>% filter(STATUS=="complete")
 ```
 
 ```{r}
-# ## Get simulated data
-# df_sim <- read.csv("simulation_students_20260323.csv", check.names = F, sep = "\t", fileEncoding = "UTF16LE")
-# 
-# 
-# # Reduce simulated data
-# set.seed(123)
-# 
-# countries <- unique(df_sim$QUESTNNR)
-# 
-# country_remove <- "ARG"   # removed
-# country_full   <- "DEU"   # N=200
-# 
-# # Reduce samples
-# df_sim <- df_sim %>%
-#   filter(QUESTNNR != country_remove)
-# 
-# groups <- df_sim %>%
-#   group_split(QUESTNNR)
-# 
-# df_sim <- bind_rows(lapply(groups, function(g) {
-# 
-#   cc <- unique(g$QUESTNNR)
-# 
-#   # Belgium as specific example (two lang)
-#   if (cc == "BEL") {
-# 
-#     g_nld <- g %>% filter(LANGUAGE == "nld")
-#     g_fra <- g %>% filter(LANGUAGE == "fra")
-# 
-#     # get 101 nld, 38 fra
-#     g_nld_sample <- g_nld %>% slice_sample(n = 101, replace = TRUE)
-#     g_fra_sample <- g_fra %>% slice_sample(n = 38, replace = TRUE)
-# 
-#     return(bind_rows(g_nld_sample, g_fra_sample))
-#   }
-#   
-#   # Germany stays full sample
-#   if (cc == country_full) {
-#     return(g)
-#   }
-# 
-#   # reduced sample sizes
-#   n_target <- sample(30:180, 1)
-# 
-#   g %>% slice_sample(n = min(n_target, nrow(g)))
-# }))
-# 
-# 
-# # -------------------------
-# # Gender and student bias
-# # -------------------------
-# df_sim <- df_sim %>%
-#   mutate(
-#     SD01 = case_when(
-# 
-#       # more male
-#       QUESTNNR %in% c("IND", "PAK", "EGY", "NGA") ~
-#         sample(c(1, 2, 3), n(), replace = TRUE,
-#                prob = c(0.10, 0.85, 0.05)),
-# 
-#       # more female
-#       QUESTNNR %in% c("BRA", "PHL", "UKR") ~
-#         sample(c(1, 2, 3), n(), replace = TRUE,
-#                prob = c(0.80, 0.15, 0.05)),
-# 
-#       TRUE ~ SD01
-#     )
-#   )
-# 
-# df_sim <- df_sim %>%
-#   mutate(
-#     SD09_04 = case_when(
-# 
-#       # high student share
-#       QUESTNNR %in% c("NLD", "SWE", "GBR", "USA", "FRA") ~
-#         rbinom(n(), 2, 0.65),
-# 
-#       TRUE ~ SD09_04
-#     )
-#   )
-# 
-# df <- df_sim
+## Get simulated data
+df_sim <- read.csv("simulation_students_20260323.csv", check.names = F, sep = "\t", fileEncoding = "UTF16LE")
+
+
+# Reduce simulated data
+set.seed(123)
+
+countries <- unique(df_sim$QUESTNNR)
+
+country_remove <- "ARG"   # removed
+country_full   <- "DEU"   # N=200
+
+# Reduce samples
+df_sim <- df_sim %>%
+  filter(QUESTNNR != country_remove)
+
+groups <- df_sim %>%
+  group_split(QUESTNNR)
+
+df_sim <- bind_rows(lapply(groups, function(g) {
+
+  cc <- unique(g$QUESTNNR)
+
+  # Belgium as specific example (two lang)
+  if (cc == "BEL") {
+
+    g_nld <- g %>% filter(LANGUAGE == "nld")
+    g_fra <- g %>% filter(LANGUAGE == "fra")
+
+    # get 101 nld, 38 fra
+    g_nld_sample <- g_nld %>% slice_sample(n = 101, replace = TRUE)
+    g_fra_sample <- g_fra %>% slice_sample(n = 38, replace = TRUE)
+
+    return(bind_rows(g_nld_sample, g_fra_sample))
+  }
+
+  # Germany stays full sample
+  if (cc == country_full) {
+    return(g)
+  }
+
+  # reduced sample sizes
+  n_target <- sample(30:180, 1)
+
+  g %>% slice_sample(n = min(n_target, nrow(g)))
+}))
+
+
+# -------------------------
+# Gender and student bias
+# -------------------------
+df_sim <- df_sim %>%
+  mutate(
+    SD01 = case_when(
+
+      # more male
+      QUESTNNR %in% c("IND", "PAK", "EGY", "NGA") ~
+        sample(c(1, 2, 3), n(), replace = TRUE,
+               prob = c(0.10, 0.85, 0.05)),
+
+      # more female
+      QUESTNNR %in% c("BRA", "PHL", "UKR") ~
+        sample(c(1, 2, 3), n(), replace = TRUE,
+               prob = c(0.80, 0.15, 0.05)),
+
+      TRUE ~ SD01
+    )
+  )
+
+df_sim <- df_sim %>%
+  mutate(
+    SD09_04 = case_when(
+
+      # high student share
+      QUESTNNR %in% c("NLD", "SWE", "GBR", "USA", "FRA") ~
+        rbinom(n(), 2, 0.65),
+
+      TRUE ~ SD09_04
+    )
+  )
+
+df <- df_sim
 ```
 
 ```{r}
