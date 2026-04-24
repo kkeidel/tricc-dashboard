@@ -559,7 +559,8 @@ summary_table2 <- summary_table2 %>%
       "Low (%)", "Medium (%)", "High (%)"),
     ~ ifelse(is.na(.), "NA", .)
   )
-)
+) %>%
+  arrange(Country)
 
 # library(kableExtra)
 # 
