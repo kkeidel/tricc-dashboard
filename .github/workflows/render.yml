@@ -1,4 +1,4 @@
-name: Render Rmd daily
+name: Render Rmd daily #test
 
 on:
   schedule:
