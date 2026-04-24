@@ -3,9 +3,7 @@ name: Render Rmd daily
 on:
   workflow_dispatch:
   schedule:
-    - cron: "* * * * *"
-
-permissions: read-all
+    - cron: '* * * * *'
 
 jobs:
   render:
@@ -44,4 +42,4 @@ jobs:
           git config user.email 'github-actions@github.com'
           git add index.html
           git commit -m 'update html' || echo 'no changes'
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
