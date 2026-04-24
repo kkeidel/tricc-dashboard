@@ -1,0 +1,22 @@
+name: Scheduled Test Workflow
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"  # alle 10 Minuten (zuverlässiger als jede Minute)
+
+jobs:
+  test-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Print timestamp
+        run: echo "Workflow läuft: $(date)"
+
+      - name: Simpler Test
+        run: |
+          echo "Hello from scheduled GitHub Action"
+          echo "Everything is OK"
