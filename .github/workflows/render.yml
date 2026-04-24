@@ -1,0 +1,33 @@
+name: Render Rmd daily
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # täglich 06:00 UTC (~8 Uhr DE)
+  workflow_dispatch:      # manuell starten möglich
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Install packages
+        run: |
+          R -e "install.packages(c('rmarkdown','dplyr','tidyr','httr','jsonlite','knitr','kableExtra','DT','crosstalk'))"
+
+      - name: Render Rmd
+        run: |
+          R -e "rmarkdown::render('index.Rmd', output_file='index.html')"
+
+      - name: Commit HTML
+        run: |
+          git config user.name 'github-actions'
+          git config user.email 'actions@github.com'
+          git add index.html
+          git commit -m 'update html' || echo 'no changes'
+          git push
