@@ -1,7 +1,6 @@
 name: Render Rmd daily
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"
 
