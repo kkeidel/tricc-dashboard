@@ -14,125 +14,127 @@ library(dplyr)
 library(tidyr)
 library(knitr)
 library(kableExtra)
+library(crosstalk)
+library(DT)
 ```
 
 ```{r, include=FALSE, echo=FALSE}
-# # Get data via API
-# 
-# api_key <- Sys.getenv("SOSCI_API_KEY")
-# project_id <- Sys.getenv("SOSCI_PROJECT_ID")
-# 
-# url <- paste0(
-#   "https://www.soscisurvey.de/admin/api.php?v1/projects/",
-#   project_id,
-#   "/dataset"
-# )
-# 
-# res <- GET(
-#   url,
-#   add_headers(
-#     Authorization = paste0("Bearer ", api_key)
-#   )
-# )
-# 
-# # status_code(res)
-# # content(res, "text", encoding = "UTF-8")
-# 
-# # Get data and flatten it
-# json_text <- content(res, "text", encoding = "UTF-8")
-# raw <- fromJSON(json_text, flatten = TRUE)
-# 
-# dat_raw <- raw$data
-# 
-# df_raw <- bind_rows(dat_raw)
-# 
-# # Only keep complete datasets
-# df <- df_raw %>% filter(STATUS=="complete")
+# Get data via API
+
+api_key <- Sys.getenv("SOSCI_API_KEY")
+project_id <- Sys.getenv("SOSCI_PROJECT_ID")
+
+url <- paste0(
+  "https://www.soscisurvey.de/admin/api.php?v1/projects/",
+  project_id,
+  "/dataset"
+)
+
+res <- GET(
+  url,
+  add_headers(
+    Authorization = paste0("Bearer ", api_key)
+  )
+)
+
+# status_code(res)
+# content(res, "text", encoding = "UTF-8")
+
+# Get data and flatten it
+json_text <- content(res, "text", encoding = "UTF-8")
+raw <- fromJSON(json_text, flatten = TRUE)
+
+dat_raw <- raw$data
+
+df_raw <- bind_rows(dat_raw)
+
+# Only keep complete datasets
+df <- df_raw %>% filter(STATUS=="complete") %>% filter(MODE == "interview")
 ```
 
 ```{r}
-## Get simulated data
-df_sim <- read.csv("simulation_students_20260323.csv", check.names = F, sep = "\t", fileEncoding = "UTF16LE")
-
-
-# Reduce simulated data
-set.seed(123)
-
-countries <- unique(df_sim$QUESTNNR)
-
-country_remove <- "ARG"   # removed
-country_full   <- "DEU"   # N=200
-
-# Reduce samples
-df_sim <- df_sim %>%
-  filter(QUESTNNR != country_remove)
-
-groups <- df_sim %>%
-  group_split(QUESTNNR)
-
-df_sim <- bind_rows(lapply(groups, function(g) {
-
-  cc <- unique(g$QUESTNNR)
-
-  # Belgium as specific example (two lang)
-  if (cc == "BEL") {
-
-    g_nld <- g %>% filter(LANGUAGE == "nld")
-    g_fra <- g %>% filter(LANGUAGE == "fra")
-
-    # get 101 nld, 38 fra
-    g_nld_sample <- g_nld %>% slice_sample(n = 101, replace = TRUE)
-    g_fra_sample <- g_fra %>% slice_sample(n = 38, replace = TRUE)
-
-    return(bind_rows(g_nld_sample, g_fra_sample))
-  }
-
-  # Germany stays full sample
-  if (cc == country_full) {
-    return(g)
-  }
-
-  # reduced sample sizes
-  n_target <- sample(30:180, 1)
-
-  g %>% slice_sample(n = min(n_target, nrow(g)))
-}))
-
-
-# -------------------------
-# Gender and student bias
-# -------------------------
-df_sim <- df_sim %>%
-  mutate(
-    SD01 = case_when(
-
-      # more male
-      QUESTNNR %in% c("IND", "PAK", "EGY", "NGA") ~
-        sample(c(1, 2, 3), n(), replace = TRUE,
-               prob = c(0.10, 0.85, 0.05)),
-
-      # more female
-      QUESTNNR %in% c("BRA", "PHL", "UKR") ~
-        sample(c(1, 2, 3), n(), replace = TRUE,
-               prob = c(0.80, 0.15, 0.05)),
-
-      TRUE ~ SD01
-    )
-  )
-
-df_sim <- df_sim %>%
-  mutate(
-    SD09_04 = case_when(
-
-      # high student share
-      QUESTNNR %in% c("NLD", "SWE", "GBR", "USA", "FRA") ~
-        rbinom(n(), 2, 0.65),
-
-      TRUE ~ SD09_04
-    )
-  )
-
-df <- df_sim
+# ## Get simulated data
+# df_sim <- read.csv("simulation_students_20260323.csv", check.names = F, sep = "\t", fileEncoding = "UTF16LE")
+# 
+# 
+# # Reduce simulated data
+# set.seed(123)
+# 
+# countries <- unique(df_sim$QUESTNNR)
+# 
+# country_remove <- "ARG"   # removed
+# country_full   <- "DEU"   # N=200
+# 
+# # Reduce samples
+# df_sim <- df_sim %>%
+#   filter(QUESTNNR != country_remove)
+# 
+# groups <- df_sim %>%
+#   group_split(QUESTNNR)
+# 
+# df_sim <- bind_rows(lapply(groups, function(g) {
+# 
+#   cc <- unique(g$QUESTNNR)
+# 
+#   # Belgium as specific example (two lang)
+#   if (cc == "BEL") {
+# 
+#     g_nld <- g %>% filter(LANGUAGE == "nld")
+#     g_fra <- g %>% filter(LANGUAGE == "fra")
+# 
+#     # get 101 nld, 38 fra
+#     g_nld_sample <- g_nld %>% slice_sample(n = 101, replace = TRUE)
+#     g_fra_sample <- g_fra %>% slice_sample(n = 38, replace = TRUE)
+# 
+#     return(bind_rows(g_nld_sample, g_fra_sample))
+#   }
+# 
+#   # Germany stays full sample
+#   if (cc == country_full) {
+#     return(g)
+#   }
+# 
+#   # reduced sample sizes
+#   n_target <- sample(30:180, 1)
+# 
+#   g %>% slice_sample(n = min(n_target, nrow(g)))
+# }))
+# 
+# 
+# # -------------------------
+# # Gender and student bias
+# # -------------------------
+# df_sim <- df_sim %>%
+#   mutate(
+#     SD01 = case_when(
+# 
+#       # more male
+#       QUESTNNR %in% c("IND", "PAK", "EGY", "NGA") ~
+#         sample(c(1, 2, 3), n(), replace = TRUE,
+#                prob = c(0.10, 0.85, 0.05)),
+# 
+#       # more female
+#       QUESTNNR %in% c("BRA", "PHL", "UKR") ~
+#         sample(c(1, 2, 3), n(), replace = TRUE,
+#                prob = c(0.80, 0.15, 0.05)),
+# 
+#       TRUE ~ SD01
+#     )
+#   )
+# 
+# df_sim <- df_sim %>%
+#   mutate(
+#     SD09_04 = case_when(
+# 
+#       # high student share
+#       QUESTNNR %in% c("NLD", "SWE", "GBR", "USA", "FRA") ~
+#         rbinom(n(), 2, 0.65),
+# 
+#       TRUE ~ SD09_04
+#     )
+#   )
+# 
+# df <- df_sim
 ```
 
 ```{r}
@@ -196,64 +198,77 @@ edu_rules <- tibble::tribble(
   "ARG", 2, 4,
   "AUS", 2, 4,
   "AUT", 2, 7,
+  "AZE", 2, 4,
+  "BEL", 2, 3,
   "BDG", 2, 3,
   "BGR", 2, 3,
+  "BIH", 1, 2,
   "BRA", 2, 4,
-  # "BWA", NA, NA,# to check
-  # "CAN", 2, 3, # to check
+  "BWA", 2, 3,
+  "CAN", 2, 3, # note: coding was adapted in survey already (to harmonise eng/fre)
   "CHE", 2, 4,
-  #"CHL", NA, NA,
+  "CHL", 2, 3,
   "CHN", 2, 4,
   "CMR", 2, 3,
-  #"COL", NA, NA,
+  "COL", 2, 3,
   "CZE", 1, 3,
   "DEU", 3, 6,
-  # "DNK", NA, NA,# to check
+  "DNK", 1, 2,
   "ECU", 1, 3,
   "EGY", 2, 4,
   "ESP", 2, 4,
+  "EST", 2, 4, # to check
+  "ETH", 4, 6, 
   "FRA", 2, 3,
   "GBR", 2, 3,
+  "GEO", 2, 4,
   "GHA", 3, 4,
   "GRC", 2, 4,
   "HND", 1, 2,
   "HRV", 1, 5,
   "HUN", 1, 4,
-  "IDN", 2, 3, # to check
-  # "IND", NA, NA, # to check
+  "IDN", 2, 3, 
+  "IND", 3, 6, 
   "IRL", 2, 4, 
   "IRQ", 2, 3, # to check
   "ISL", 2, 3,
   "ISR", 2, 4,
   "ITA", 2, 4,
-  "JPN", 2, 3,#to check
+  "JPN", 2, 3, #to check
+  "KAZ", 2, 4, 
+  "KEN", 2, 3,
   "KOR", 2, 3,
-  "MEX", 2, 3,#to check
+  "MEX", 2, 3, #to check
   "MLT", 2, 3,
   "MMR", 2, 4,
+  "MNG", 2, 4,
   "MOZ", 2, 4,
-  "NGA", 2, 3,#to check
+  "NGA", 2, 3,
   "NLD", 1, 5,
   "NZL", 2, 3,
-  # "PAK", NA, NA, # to check
+  "OMN", 2, 4,
+  "PAK", 4, 6,
   "PER", 2, 4,
-  "PHL", 3, 5, # to check
+  "PHL", 3, 4,
   "POL", 2, 5,
   "PRT", 2, 4,
-  "QAT", 2, 3, # to check
+  "QAT", 2, 3,
   "ROU", 2, 5,
+  "SAU", 2, 3,
   "SGP", 2, 4,
   "SRB", 1, 2,
-  "SVN", 1, 2, # to check
-  # "SWE", NA, NA, # to check
+  "SVN", 1, 2, 
+  "SWE", 1, 2,
   "THA", 2, 3, # to check
   "TUR", 2, 3,
+  "UGA", 2, 3,
   "UKR", 2, 4,
   "URY", 1, 2,
   "USA", 2, 3,
-  "XKX", 4, 7,
-  # "ZAF", NA, NA, # to check
-  # "ZWA", NA, NA, # to check
+  "XKX", 2, 5,
+  "ZAF", 2, 3,
+  "ZWE", 2, 3
+
 )
 
 
@@ -295,8 +310,8 @@ df <- df %>%
 df <- df %>%
   mutate(
     
-    employed = if_else(
-      SD09_01 == 2 | SD09_02 == 2 | SD09_03 == 2 | SD09_06 == 2,
+    working = if_else(
+      SD09_01 == 2 | SD09_02 == 2 | SD09_03 == 2 | SD09_06 == 2 | SD09_11 == 2,
       1, 0
     ),
     
@@ -306,7 +321,7 @@ df <- df %>%
     ),
     
     unemployed = if_else(
-      SD09_07 == 2 | SD09_08 == 2,
+      SD09_07 == 2 | SD09_08 == 2 | SD09_10 == 2,
       1, 0
     ),
     
@@ -322,7 +337,7 @@ df <- df %>%
 # ----------------------------------------------------------
 # COUNTRIES AND LANGUAGE
 # ----------------------------------------------------------
-library(dplyr)
+
 
 
 country_lookup <- tibble::tribble(
@@ -336,6 +351,7 @@ country_lookup <- tibble::tribble(
   "BEL", "Belgium",
   "BGD", "Bangladesh",
   "BGR", "Bulgaria",
+  "BIH", "Bosnia and Herzegowina",
   "BRA", "Brazil",
   "BWA", "Botswana",
   "CAN", "Canada",
@@ -353,8 +369,8 @@ country_lookup <- tibble::tribble(
   "EST", "Estonia",
   "ETH", "Ethiopia",
   "FRA", "France",
-  "GEO", "Georgia",
   "GBR", "United Kingdom",
+  "GEO", "Georgia",
   "GHA", "Ghana",
   "GRC", "Greece",
   "HND", "Honduras",
@@ -368,6 +384,8 @@ country_lookup <- tibble::tribble(
   "ISR", "Israel",
   "ITA", "Italy",
   "JPN", "Japan",
+  "KAZ", "Kazakhstan",
+  "KEN", "Kenya",
   "KOR", "South Korea",
   "LTU", "Lithuania",
   "MAR", "Morocco",
@@ -375,9 +393,11 @@ country_lookup <- tibble::tribble(
   "MLT", "Malta",
   "MMR", "Myanmar",
   "MOZ", "Mozambique",
+  "MNG", "Mongolia",
   "NGA", "Nigeria",
   "NLD", "Netherlands",
   "NZL", "New Zealand",
+  "OMN", "Oman",
   "PAK", "Pakistan",
   "PER", "Peru",
   "PHL", "Philippines",
@@ -385,12 +405,13 @@ country_lookup <- tibble::tribble(
   "PRT", "Portugal",
   "QAT", "Qatar",
   "ROU", "Romania",
+  "SAU", "Saudi Arabia",
   "SGP", "Singapore",
   "SRB", "Serbia",
   "SVN", "Slovenia",
   "SWE", "Sweden",
   "THA", "Thailand",
-  "TUR", "Turkey",
+  "TUR", "Türkiye",
   "UGA", "Uganda",
   "UKR", "Ukraine",
   "URY", "Uruguay",
@@ -447,7 +468,7 @@ summary_table <- df %>%
     age_mean = mean(age, na.rm = TRUE),
     age_sd   = sd(age, na.rm = TRUE),
     
-    employed   = mean(employed == 1, na.rm = TRUE) * 100,
+    working   = mean(working == 1, na.rm = TRUE) * 100,
     student    = mean(student == 1, na.rm = TRUE) * 100,
     unemployed = mean(unemployed == 1, na.rm = TRUE) * 100,
     retired    = mean(retired == 1, na.rm = TRUE) * 100,
@@ -470,9 +491,6 @@ summary_table <- summary_table %>%
 ```
 
 ```{r}
-library(knitr)
-library(kableExtra)
-
 # summary_table %>%
 #   arrange(desc(n)) %>%
 #   kable(
@@ -485,8 +503,15 @@ library(kableExtra)
 
 
 ```{r}
+needed <- c("label_1","label_2","n_lang_1","n_lang_2")
+missing_cols <- setdiff(needed, names(language_summary))
+if (length(missing_cols) > 0) {
+  language_summary[missing_cols] <- NA_character_
+}
+
 summary_table2 <- summary_table %>%
   left_join(country_lookup, by = "country_code") %>%
+  left_join(language_summary, by = "country_code") %>%
   mutate(
     Country = country_name,
     across(where(is.numeric), ~round(.x, 1))
@@ -500,7 +525,7 @@ summary_table2 <- summary_table %>%
   n_lang_2,
   female, male, other,
   age_mean, age_sd,
-  employed, student, unemployed, retired,
+  working, student, unemployed, retired,
   low, medium, high
 )
 
@@ -513,7 +538,7 @@ colnames(summary_table2) <- c(
   "n_lang_2",
   "Female (%)", "Male (%)", "Other (%)",
   "Age (Mean)", "Age (SD)",
-  "Employed (%)", "Student (%)", "Unemployed (%)", "Retired (%)",
+  "Working (%)", "Student (%)", "Unemployed (%)", "Retired (%)",
   "Low (%)", "Medium (%)", "High (%)"
 )
 
@@ -555,15 +580,14 @@ summary_table2 <- summary_table2 %>%
   across(
     c("Female (%)", "Male (%)", "Other (%)",
       "Age (Mean)", "Age (SD)",
-      "Employed (%)", "Student (%)", "Unemployed (%)", "Retired (%)",
+      "Working (%)", "Student (%)", "Unemployed (%)", "Retired (%)",
       "Low (%)", "Medium (%)", "High (%)"),
     ~ ifelse(is.na(.), "NA", .)
   )
 ) %>%
   arrange(Country)
 
-# library(kableExtra)
-# 
+
 # summary_table2 <- summary_table2 %>%
 #   arrange(desc(N)) %>%
 # 
@@ -597,10 +621,6 @@ summary_table2 <- summary_table2 %>%
 
 
 ```{r}
-library(dplyr)
-library(crosstalk)
-library(DT)
-
 shared <- SharedData$new(summary_table2)
 
 filter_select(
