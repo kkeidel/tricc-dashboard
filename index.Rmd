@@ -670,7 +670,6 @@ summary_table2 <- summary_table2 %>%
 ```
 
 
-# Test
 ```{r}
 shared <- SharedData$new(summary_table2)
 
