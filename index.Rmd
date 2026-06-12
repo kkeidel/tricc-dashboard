@@ -48,8 +48,45 @@ dat_raw <- raw$data
 
 df_raw <- bind_rows(dat_raw)
 
+# Ensure all variables are given
+expected_vars <- c(
+  "CASE", "QUESTNNR", "MODE", "LANGUAGE", "STARTED",
+  "CA01_ok", "CA01fail", "CO01", 
+  "DA02", "DA04", "DA09", "DA12", "DA15", "DA17", 
+  "DA19", "DA23", "DA25", "DA28",
+  "DE02", "DE04", "DE09", "DE12", "DE15", "DE17", "DE19",
+  "DE23", "DE25", "DE28", "IN01_01", "RA01_CP", "RA01",
+  "RA02_CP", "RA02", "RT01_02", "RT01_04", "RT01_09",
+  "RT01_12", "RT01_15", "RT01_17", "RT01_19", "RT01_23",
+  "RT01_25", "RT01_28", "RT02_02", "RT02_04", "RT02_09",
+  "RT02_12", "RT02_15", "RT02_17", "RT02_19", "RT02_23",
+  "RT02_25", "RT02_28", 
+  "SD01", "SD01_03", "SD02_01", "SD03", "SD04", "SD04_01",
+  "SD04_02", "SD04_03", "SD04_04", "SD05_01", "SD06_01",
+  "SD07_01", "SD08_01", "SD09", "SD09_01", "SD09_02", 
+  "SD09_03", "SD09_04", "SD09_05", "SD09_06",
+  "SD09_07", "SD09_08", "SD09_09", "SD09_10", "SD09_11", 
+  "SD10", "SD10_01", "SD10_11", "SD11_01", "SD12", 
+  "SE01", "SE02", "SE05_GRP", "SE05_INT", "SE05_CNT", 
+  "TIME001", "TIME002", "TIME009", "TIME010", "TIME011",
+  "TIME012", "TIME013", "TIME014", "TIME015", "TIME016",
+  "TIME017", "TIME018", "TIME021", "TIME022", "TIME023",
+  "TIME024", "TIME025", "TIME026", "TIME027", "TIME028",
+  "TIME029", "TIME030", "TIME031", "TIME032", "TIME033",
+  "TIME034", "TIME035", "TIME_SUM", "LASTDATA", "STATUS",
+  "FINISHED", "Q_VIEWER", "LASTPAGE", "MAXPAGE", "MISSING",
+  "MISSREL", "TIME_RSI"
+)
+
+missing_vars <- setdiff(expected_vars, names(df_raw))
+for(v in missing_vars) {
+  df_raw[[v]] <- NA_character_
+}
+
 # Only keep complete datasets
 df <- df_raw %>% filter(STATUS=="complete") %>% filter(MODE == "interview")
+
+
 ```
 
 ```{r}
@@ -448,6 +485,21 @@ language_summary <- df %>%
     names_sep = "_"
   )
 
+# Ensure all language colummns exist
+needed_char <- c("label_1", "label_2")
+needed_num  <- c("n_lang_1", "n_lang_2")
+missing_char <- setdiff(needed_char, names(language_summary))
+missing_num  <- setdiff(needed_num, names(language_summary))
+
+for (v in missing_char) {
+  language_summary[[v]] <- NA_character_
+}
+for (v in missing_num) {
+  language_summary[[v]] <- NA_real_
+}
+
+language_summary <- language_summary %>%
+  select(country_code, label_1, label_2, n_lang_1, n_lang_2)
 ```
 
 
@@ -511,7 +563,6 @@ if (length(missing_cols) > 0) {
 
 summary_table2 <- summary_table %>%
   left_join(country_lookup, by = "country_code") %>%
-  left_join(language_summary, by = "country_code") %>%
   mutate(
     Country = country_name,
     across(where(is.numeric), ~round(.x, 1))
@@ -569,9 +620,9 @@ summary_table2 <- summary_table2 %>%
     
     tooltip_student = ifelse(flag_student_red, "High student share", ""),
     
-    tooltip_lang1 = ifelse(flag_lang1_green, "Language version complete!", ""),
+    tooltip_lang1 = ifelse(flag_lang1_green, "Language version >= 100", ""),
     
-    tooltip_lang2 = ifelse(flag_lang2_green, "Language version complete!", "")
+    tooltip_lang2 = ifelse(flag_lang2_green, "Language version >= 100", "")
     
   )
 
