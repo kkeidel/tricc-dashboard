@@ -335,37 +335,19 @@ df <- df %>%
 # EMPLOYMENT VARIABLES
 # ----------------------------------------------------------
 
-df <- df %>%
-  mutate(
-    across(
-      paste0("SD09_0", 1:9),
-      ~ ifelse(. == 2, 1, 0),
-      .names = "employ_{col}"
-    )
-  )
 
 df <- df %>%
   mutate(
+    working = as.integer(if_any(c(SD09_01, SD09_02, SD09_03, SD09_06, SD09_11),
+                                ~ coalesce(.x == 2, FALSE))),
     
-    working = if_else(
-      SD09_01 == 2 | SD09_02 == 2 | SD09_03 == 2 | SD09_06 == 2 | SD09_11 == 2,
-      1, 0
-    ),
+    student = as.integer(if_any(c(SD09_04, SD09_05),
+                                ~ coalesce(.x == 2, FALSE))),
     
-    student = if_else(
-      SD09_04 == 2 | SD09_05 == 2,
-      1, 0
-    ),
+    unemployed = as.integer(if_any(c(SD09_07, SD09_08, SD09_10),
+                                   ~ coalesce(.x == 2, FALSE))),
     
-    unemployed = if_else(
-      SD09_07 == 2 | SD09_08 == 2 | SD09_10 == 2,
-      1, 0
-    ),
-    
-    retired = if_else(
-      SD09_09 == 2,
-      1, 0
-    )
+    retired = as.integer(coalesce(SD09_09 == 2, FALSE))
   )
 
 ```
