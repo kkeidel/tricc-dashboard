@@ -1,7 +1,7 @@
 ---
 title: 'TRICC Survey: Current Status'
 author: "Kristof Keidel"
-date: "`r Sys.Date()`"
+date: "`r paste('Last updated:', format(Sys.time(), tz = 'Europe/Berlin', '%d.%m.%Y, %H:%M %Z'))`"
 output: html_document
 ---
 
@@ -86,7 +86,9 @@ for(v in missing_vars) {
 # Only keep complete datasets
 df <- df_raw %>% filter(STATUS=="complete") %>% filter(MODE == "interview")
 
-
+# Keep only datasets for Romania
+df <- df %>%
+  filter(!(QUESTNNR=="ROU" & CASE <= 13759))
 ```
 
 ```{r}
