@@ -582,7 +582,7 @@ summary_table2 <- summary_table2 %>%
   mutate(
     
     # FLAGS
-    flag_n_green = N == 200,
+    flag_n_green = N >= 200,
     
     flag_gender_red = ifelse(
       N >= 50 & pmin(`Female (%)`, `Male (%)`) < 35,
@@ -594,7 +594,7 @@ summary_table2 <- summary_table2 %>%
       TRUE, FALSE
     ),
     
-    flag_lang1_green = (n_lang_1 >= 100 & (!is.na(n_lang_2)) | n_lang_1 == 200),
+    flag_lang1_green = (n_lang_1 >= 100 & (!is.na(n_lang_2)) | n_lang_1 >= 200),
     flag_lang2_green = n_lang_2 >= 100 & (!is.na(n_lang_1)),
     
     # TOOLTIPS
