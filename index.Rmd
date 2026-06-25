@@ -83,9 +83,14 @@ for(v in missing_vars) {
   df_raw[[v]] <- NA_character_
 }
 
+# Corrections df_raw:
+# SE05_GRP for MEX
+df_raw$SE05_GRP[df_raw$QUESTNNR == "MEX"] <- "40"
+
 # Only keep complete datasets
 df <- df_raw %>% filter(STATUS=="complete") %>% filter(MODE == "interview")
 
+# Corrections df:
 # Keep only datasets for Romania
 df <- df %>%
   filter(!(QUESTNNR=="ROU" & CASE <= 13759))
