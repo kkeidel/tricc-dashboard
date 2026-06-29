@@ -89,14 +89,23 @@ df_raw$SE05_GRP[df_raw$QUESTNNR == "MEX"] <- "40"
 df_raw$SE05_GRP[df_raw$QUESTNNR == "OMN"] <- "79"
 df_raw$SE05_GRP[df_raw$QUESTNNR == "OMN"] <- "54"
 
-
-# Only keep complete datasets
-df <- df_raw %>% filter(STATUS=="complete") %>% filter(MODE == "interview")
-
-# Corrections df:
+# Corrections df_raw:
 # Keep only datasets for Romania
-df <- df %>%
+df_raw <- df_raw %>%
   filter(!(QUESTNNR=="ROU" & CASE <= 13759))
+
+# Only keep the first 200 complete datasets per country
+df <- df_raw %>%
+  filter(
+    STATUS == "complete",
+    MODE == "interview"
+  ) %>%
+  arrange(QUESTNNR, CASE) %>%   # optional, aber empfehlenswert
+  group_by(QUESTNNR) %>%
+  slice_head(n = 200) %>%
+  ungroup()
+
+
 ```
 
 ```{r}
