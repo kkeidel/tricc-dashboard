@@ -602,7 +602,12 @@ summary_table2 <- summary_table2 %>%
     flag_n_green = N >= 200,
     
     flag_gender_red = ifelse(
-      N >= 50 & pmin(`Female (%)`, `Male (%)`) < 35,
+      N >= 50 & pmin(`Female (%)`, `Male (%)`) < 30,
+      TRUE, FALSE
+    ),
+    
+    flag_gender_yellow = ifelse(
+      N >= 50 & pmin(`Female (%)`, `Male (%)`) >= 30 & pmin(`Female (%)`, `Male (%)`) < 35,
       TRUE, FALSE
     ),
     
@@ -611,13 +616,15 @@ summary_table2 <- summary_table2 %>%
       TRUE, FALSE
     ),
     
-    flag_lang1_green = (n_lang_1 >= 100 & (!is.na(n_lang_2)) | n_lang_1 >= 200),
-    flag_lang2_green = n_lang_2 >= 100 & (!is.na(n_lang_1)),
+    flag_lang1_green = (n_lang_1 >= 100 & (!is.na(n_lang_2)) | n_lang_1 >= 200) & (Country %in% c("Switzerland", "Belgium")),
+    flag_lang2_green = n_lang_2 >= 100 & (!is.na(n_lang_1)) & (Country %in% c("Switzerland", "Belgium")),
     
     # TOOLTIPS
     tooltip_n = ifelse(flag_n_green, "Country complete!", ""),
     
-    tooltip_gender = ifelse(flag_gender_red, "Gender imbalance detected", ""),
+    tooltip_gender = case_when(flag_gender_red ~ "Strong gender imbalance detected",
+                               flag_gender_yellow ~ "Slight gender imbalance detected",
+                               TRUE ~ ""),
     
     tooltip_student = ifelse(flag_student_red, "High student share", ""),
     
@@ -793,6 +800,12 @@ function(settings, json) {
     "N",
     backgroundColor = styleEqual(c(TRUE, FALSE), c("#c7f7c1", NA)),
     valueColumns = "flag_n_green"
+  ) %>%
+  
+  formatStyle(
+    c("Female (%)", "Male (%)"),
+    backgroundColor = styleEqual(c(TRUE, FALSE), c("#fff3cd", NA)),
+    valueColumns = "flag_gender_yellow"
   ) %>%
   
   formatStyle(
