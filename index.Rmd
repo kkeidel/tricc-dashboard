@@ -725,7 +725,7 @@ function(settings, json) {
   targets = c(
     which(colnames(summary_table2) == "n_lang_1") - 1,
     which(colnames(summary_table2) == "n_lang_2") - 1,
-   18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+   18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28
   )
 ) ,
       # Tooltip für N
