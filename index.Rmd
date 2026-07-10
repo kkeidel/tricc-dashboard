@@ -87,7 +87,19 @@ for(v in missing_vars) {
 # SE05_GRP for MEX
 df_raw$SE05_GRP[df_raw$QUESTNNR == "MEX"] <- "40"
 df_raw$SE05_GRP[df_raw$QUESTNNR == "OMN"] <- "79"
-df_raw$SE05_GRP[df_raw$QUESTNNR == "OMN"] <- "54"
+df_raw$SE05_GRP[df_raw$QUESTNNR == "SGP"] <- "54"
+
+# Set quality fail for cases with missing exact income despite selecting
+# "enter exact income" / "above XY, enter income if possible" (coding error in php)
+df_raw <- df_raw %>%
+  mutate(
+    STATUS = case_when(
+      CASE == 33744 & QUESTNNR == "HND" ~ "quality fail",
+      CASE == 39254 & QUESTNNR == "MNG" ~ "quality fail",
+      CASE == 22886 & QUESTNNR == "THA" ~ "quality fail",
+      TRUE ~ STATUS
+    )
+  )
 
 # Corrections df_raw:
 # Keep only datasets for Romania
@@ -100,7 +112,7 @@ df <- df_raw %>%
     STATUS == "complete",
     MODE == "interview"
   ) %>%
-  arrange(QUESTNNR, CASE) %>%   # optional, aber empfehlenswert
+  arrange(QUESTNNR, CASE) %>% 
   group_by(QUESTNNR) %>%
   slice_head(n = 200) %>%
   ungroup()
