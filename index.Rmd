@@ -251,6 +251,13 @@ df <- df %>%
     income_exact_high = SD10_11,
     household_size = SD11_01
 
+  ) %>%
+  mutate(
+    gender = if_else(
+      country_code == "ARG" & !is.na(SD14_01),
+      as.numeric(SD14_01),
+      gender
+    )
   )
 
 ```
