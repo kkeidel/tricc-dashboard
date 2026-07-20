@@ -330,7 +330,7 @@ edu_rules <- tibble::tribble(
   "MNG", 2, 4,
   "MOZ", 2, 4,
   "NGA", 2, 3,
-  "NLD", 1, 5,
+  "NLD", 3, 5,
   "NZL", 2, 3,
   "OMN", 2, 4,
   "PAK", 4, 6,
@@ -367,6 +367,9 @@ df <- df %>%
     cut2 = if_else(is.na(cut2), 3, cut2),
     
     education = case_when(
+      country_code == "NLD" & education_raw %in% c(1:3) ~ 1,
+      country_code == "NLD" & education_raw %in% c(4:5, 11) ~ 2,
+      country_code == "NLD" & education_raw %in% 6:9 ~ 3,
       education_raw <= cut1 ~ 1,
       education_raw <= cut2 ~ 2,
       TRUE ~ 3
