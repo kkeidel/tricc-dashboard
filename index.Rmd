@@ -99,6 +99,7 @@ df_raw <- df_raw %>%
       CASE == 22886 & QUESTNNR == "THA" ~ "quality fail",
       CASE == 48774 & QUESTNNR == "UKR" ~ "quality fail",
       CASE == 52288 & QUESTNNR == "SAU" ~ "quality fail",
+      CASE == 58795 & QUESTNNR == "IRQ" ~ "quality fail",
       TRUE ~ STATUS
     )
   )
