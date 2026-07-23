@@ -112,7 +112,7 @@ df_raw <- df_raw %>%
 # Corrections df_raw:
 # Remove test data sets from Israel
 df_raw <- df_raw %>%
-  filter(!(coalesce(REF, "") == "ipanel" & QUESTNNR=="ISR" & CASE <= 54511))
+  filter(!(coalesce(REF, "") == "ipanel" & QUESTNNR == "ISR" & CASE %in% c(53983, 53984, 54001, 54026, 54126, 54156, 54177, 54221, 54261) ))
 
 # Remove potentially problematic cases from SGP (sequential / low RT), nearly all since 10 July
 df_raw <- df_raw %>%
