@@ -118,6 +118,10 @@ df_raw <- df_raw %>%
 df_raw <- df_raw %>%
   filter(!(QUESTNNR == "SGP" & CASE %in% c(49414, 49415, 49416, 49430, 49449, 49450, 49453, 49889, 49912, 49913, 50523, 50527, 50529, 50531, 50533, 50553, 50554, 50555, 50556, 50557, 50558, 50559)))
 
+# Remove duplicates from POL
+df_raw <- df_raw %>%
+  filter(!(QUESTNNR == "POL" & CASE %in% c(19464, 19499, 19583, 20680, 21453, 21463, 21929, 25974, 42360, 54124)))
+
 # Only keep the first 200 complete datasets per country
 df <- df_raw %>%
   filter(
