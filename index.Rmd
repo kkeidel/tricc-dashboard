@@ -89,20 +89,81 @@ df_raw$SE05_GRP[df_raw$QUESTNNR == "MEX"] <- "40"
 df_raw$SE05_GRP[df_raw$QUESTNNR == "OMN"] <- "79"
 df_raw$SE05_GRP[df_raw$QUESTNNR == "SGP"] <- "54"
 
-# Set quality fail for cases with missing exact income despite selecting
-# "enter exact income" / "above XY, enter income if possible" (coding error in php)
+## Check: Cases with missings, although participants have entered something (likely different scripture)
+is_blank <- function(x) {
+  x_chr <- trimws(as.character(x))
+  is.na(x) | x_chr == "" | x_chr == "NA"
+}
+
+flag_incomplete <- function(data) {
+  data %>%
+    filter(STATUS == "complete") %>%
+    mutate(
+      flag_age_blank = is_blank(SD02_01),
+      flag_income_blank = case_when(
+        suppressWarnings(as.numeric(SD10)) == 1  ~ is_blank(SD10_01),
+        suppressWarnings(as.numeric(SD10)) == 11 ~ is_blank(SD10_11),
+        TRUE ~ FALSE
+      ),
+      flag_household_blank = is_blank(SD11_01) | 
+        suppressWarnings(as.numeric(SD11_01)) == -1,
+      flag_any = flag_age_blank | flag_income_blank | flag_household_blank
+    ) %>%
+    filter(flag_any) %>%
+    select(CASE, QUESTNNR, STATUS, SD02_01, flag_age_blank,
+           SD10, SD10_01, SD10_11, flag_income_blank,
+           SD11_01, flag_household_blank)
+}
+
+df_complete_check <- flag_incomplete(df_raw)
+
+## Correct data according to SosciSurvey print versions
+manual_numeric_corrections <- tibble::tribble(
+  ~CASE,   ~QUESTNNR, ~SD02_01_fix, ~SD10_01_fix, ~SD10_11_fix, ~SD11_01_fix,
+  12722,   "OMN",     23L,           NA_integer_,  NA_real_,     2L,  # age + household
+  22886,   "THA",     NA_integer_,  10000L,  NA_real_,     NA_integer_,  # income (SD10_01), entered 8000-12000
+  26719,   "EGY",     42L,  NA_integer_,  NA_real_,     4L,  # age + household
+  28712,   "EGY",     34L,  NA_integer_,  NA_real_,     3L,  # age + household
+  33494,   "EGY",     37L,  NA_integer_,  NA_real_,     5L,  # age + household
+  33744,   "HND",     NA_integer_,  NA_integer_,  60000L,     NA_integer_,  # income (SD10_11), entered 50000-70000
+  39067,   "DEU",     NA_integer_,  NA_integer_,  NA_real_,     NA_integer_,  # missing values, should be quality fail
+  39254,   "MNG",     NA_integer_,  2500000L,  NA_real_,     NA_integer_,  # income (SD10_01), entered 2000000-3000000
+  48774,   "UKR",     NA_integer_,  NA_integer_,  NA_real_,     NA_integer_,  # income (SD10_11) missing
+  54163,   "EGY",     NA_integer_,  NA_integer_,  NA_real_,     5L,  # household only
+  54171,   "EGY",     36L,  NA_integer_,  NA_real_,     3L,  # age + household
+  56415,   "EGY",     31L,  NA_integer_,  NA_real_,     3L,  # age + household
+  58795,   "IRQ",     47L,  NA_integer_,  NA_real_,     4L,  # age + household
+  62192,   "IDN",     NA_integer_,  NA_integer_,  NA_real_,     NA_integer_,  # income (SD10_11) missing
+  108317,  "CMR",     NA_integer_,  1249999.5,  NA_real_,     NA_integer_,  # income (SD10_01), entered 1000000-1499999
+)
+
+df_raw <- df_raw %>%
+  left_join(manual_numeric_corrections, by = c("CASE", "QUESTNNR")) %>%
+  mutate(
+    SD02_01 = coalesce(SD02_01_fix, SD02_01),
+    SD10_01 = coalesce(SD10_01_fix, SD10_01),
+    SD10_11 = coalesce(SD10_11_fix, SD10_11),
+    SD11_01 = coalesce(SD11_01_fix, SD11_01)
+  ) %>%
+  select(-ends_with("_fix"))
+
+# Erroneously marked as completed
 df_raw <- df_raw %>%
   mutate(
     STATUS = case_when(
-      CASE == 33744 & QUESTNNR == "HND" ~ "quality fail",
-      CASE == 39254 & QUESTNNR == "MNG" ~ "quality fail",
-      CASE == 22886 & QUESTNNR == "THA" ~ "quality fail",
+      CASE == 39067 & QUESTNNR == "DEU" ~ "quality fail",
       CASE == 48774 & QUESTNNR == "UKR" ~ "quality fail",
-      CASE == 52288 & QUESTNNR == "SAU" ~ "quality fail",
-      CASE == 58795 & QUESTNNR == "IRQ" ~ "quality fail",
-      TRUE ~ STATUS
-    )
+      CASE == 62192 & QUESTNNR == "IDN" ~ "quality fail",
+      TRUE ~ STATUS)
   )
+
+## Re-check: stop if unresolved cases remain
+df_complete_check_after <- flag_incomplete(df_raw)
+if (nrow(df_complete_check_after) > 0) {
+  print(df_complete_check_after)
+  stop(nrow(df_complete_check_after), " unresolved 'complete' case(s) remain. Add to manual_numeric_corrections or set STATUS to 'quality fail'.")
+}
+
 
 # Corrections df_raw:
 # Keep only datasets for Romania
