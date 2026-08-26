@@ -188,6 +188,10 @@ df_raw <- df_raw %>%
 df_raw <- df_raw %>%
   filter(!(QUESTNNR == "POL" & CASE %in% c(19464, 19499, 19583, 20680, 21453, 21463, 21929, 25974, 42360, 54124)))
 
+# Remove duplicates from GBR
+df_raw <- df_raw %>%
+  filter(!(QUESTNNR == "GBR" & CASE %in% c(113268)))
+
 # Only keep the first 200 complete datasets per country
 df <- df_raw %>%
   filter(
