@@ -179,6 +179,10 @@ df_raw <- df_raw %>%
 df_raw <- df_raw %>%
   filter(!(QUESTNNR == "SGP" & CASE %in% c(49414, 49415, 49416, 49430, 49449, 49450, 49453, 49889, 49912, 49913, 50523, 50527, 50529, 50531, 50533, 50553, 50554, 50555, 50556, 50557, 50558, 50559)))
 
+# Remove potentially problematic cases from SAU (sequential / low RT), all around 30 August
+df_raw <- df_raw %>%
+  filter(!(QUESTNNR == "SAU" & CASE >= 115712 & CASE <= 115940))
+
 # # Remove potentially problematic cases from MOZ (sequential / low RT), 30 July
 # Commented out, since the number of cases is quite low and they will likely be removed anyway (due to RSI)
 # df_raw <- df_raw %>%
