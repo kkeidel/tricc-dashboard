@@ -181,7 +181,7 @@ df_raw <- df_raw %>%
 
 # Remove potentially problematic cases from SAU (sequential / low RT), all around 30 August
 df_raw <- df_raw %>%
-  filter(!(QUESTNNR == "SAU" & CASE >= 115712 & CASE <= 115940))
+  filter(!(QUESTNNR == "SAU" & CASE >= 115712 & CASE <= 116012))
 
 # # Remove potentially problematic cases from MOZ (sequential / low RT), 30 July
 # Commented out, since the number of cases is quite low and they will likely be removed anyway (due to RSI)
